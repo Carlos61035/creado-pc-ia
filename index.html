@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configurador de PC Inteligente</title>
+    <style>
+        /* 🎨 ESTILOS DE LA INTERFAZ (Estilo Oscuro) */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #121212;
+            color: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        .contenedor {
+            background-color: #1e1e1e;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0px 8px 24px rgba(0, 0, 0, 0.5);
+            width: 100%;
+            max-width: 450px;
+            box-sizing: border-box;
+        }
+
+        h1 {
+            font-size: 24px;
+            text-align: center;
+            color: #448aff;
+            margin-top: 0;
+        }
+
+        .campo {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: #b0bec5;
+        }
+
+        input[type="text"], select {
+            width: 100%;
+            padding: 12px;
+            background-color: #2d2d2d;
+            border: 1px solid #444;
+            border-radius: 8px;
+            color: white;
+            font-size: 16px;
+            box-sizing: border-box;
+            outline: none;
+            transition: border 0.3s;
+        }
+
+        input[type="text"]:focus, select:focus {
+            border-color: #448aff;
+        }
+
+        /* 🕹️ BOTÓN ANIMADO CON EFECTO DE HUNDIMIENTO */
+        .btn-animado {
+            width: 100%;
+            padding: 14px;
+            background-color: #448aff;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            box-sizing: border-box;
+            transition: transform 0.1s ease-out, background-color 0.2s;
+            user-select: none;
+        }
+
+        .btn-animado:hover {
+            background-color: #2979ff;
+        }
+
+        /* Cuando el usuario presiona el botón, se encoge un 5% (Efecto hundido) */
+        .btn-animado:active {
+            transform: scale(0.95);
+        }
+
+        /* 📊 CUADRO DE RESULTADOS */
+        .resultado-box {
+            margin-top: 25px;
+            padding: 15px;
+            background-color: #252525;
+            border-left: 4px solid #448aff;
+            border-radius: 4px;
+            display: none; /* Oculto al principio */
+        }
+
+        .resultado-box h3 {
+            margin-top: 0;
+            color: #00e676;
+            font-size: 16px;
+        }
+
+        .resultado-text {
+            white-space: pre-line; /* Mantiene los saltos de línea \n de la API */
+            font-size: 14px;
+            line-height: 1.6;
+            color: #e0e0e0;
+        }
+
+        .cargando {
+            text-align: center;
+            color: #ffb300;
+            display: none;
+            margin-top: 15px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="contenedor">
+        <h1>Configurador de PC IA</h1>
+        
+        <div class="campo">
+            <label for="procesador">¿Qué procesador tienes o quieres?</label>
+            <input type="text" id="procesador" placeholder="Ej: Ryzen 5 5600g o i7 4770k">
+        </div>
+
+        <div class="campo">
+            <label for="presupuesto">Selecciona tu Presupuesto</label>
+            <select id="presupuesto">
+                <option value="barato">Económico (Barato)</option>
+                <option value="medio">Equilibrado (Medio)</option>
+                <option value="mejor">El Mejor Rendimiento</option>
+            </select>
+        </div>
+
+        <button id="btnEnviar" class="btn-animado">Generar Configuración</button>
+
+        <div id="cargando" class="cargando">Procesando hardware... por favor espera...</div>
+
+        <div id="resultadoBox" class="resultado-box">
+            <h3 id="resultadoTitulo">📦 [Sistema]</h3>
+            <div id="resultadoContenido" class="resultado-text"></div>
+        </div>
+    </div>
+
+    <script>
+        // 🌐 LÓGICA DE CONEXIÓN CON TU API
+        const btnEnviar = document.getElementById('btnEnviar');
+        const inputProcesador = document.getElementById('procesador');
+        const selectPresupuesto = document.getElementById('presupuesto');
+        const cargando = document.getElementById('cargando');
+        const resultadoBox = document.getElementById('resultadoBox');
+        const resultadoTitulo = document.getElementById('resultadoTitulo');
+        const resultadoContenido = document.getElementById('resultadoContenido');
+
+        btnEnviar.addEventListener('click', async () => {
+            const procesador = inputProcesador.value.trim();
+            const presupuesto = selectPresupuesto.value;
+
+            if (!procesador) {
+                alert('Por favor, escribe un modelo de procesador.');
+                return;
+            }
+
+            // Mostrar estado de carga y ocultar resultado anterior
+            cargando.style.display = 'block';
+            resultadoBox.style.display = 'none';
+
+            try {
+                // Cambia esta URL por la tuya de Render cuando la subas (Ej: https://tu-api.onrender.com/configurar)
+                const urlAPI = "http://127.0.0.1:8000/configurar"; 
+
+                const respuesta = await fetch(urlAPI, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        procesador: procesador,
+                        presupuesto: presupuesto
+                    })
+                });
+
+                if (!respuesta.ok) {
+                    throw new Error('Error en la respuesta del servidor');
+                }
+
+                const datos = await respuesta.json();
+
+                // Dibujar los datos devueltos por tu API de Python en la pantalla
+                resultadoTitulo.innerText = `📋 [${datos.origen}] - ${datos.familia}`;
+                resultadoContenido.innerText = datos.configuracion;
+                resultadoBox.style.display = 'block';
+
+            } catch (error) {
+                alert('No se pudo conectar con la API. Asegúrate de tener encendido tu servidor local de FastAPI.');
+                console.error(error);
+            } finally {
+                cargando.style.display = 'none';
+            }
+        });
+    </script>
+
+</body>
+</html>
